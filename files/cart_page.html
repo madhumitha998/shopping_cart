@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Bootstrap libraries -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
+        crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h1><center>View Cart</center></h1>
+    <div class="col-md-6">
+        <table id="cartTable" class='table table-striped' border='1'>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+            </tr>
+        </table>
+    </div>
+
+    <div class="col-md-3">
+        <table id='totalTable' class='table table-striped' border='1'>
+            <tr id='total_price'><td><b>Total Item Price</b></td></tr>
+            <tr id='loyalty_disc'><td><b>Loyalty Point Deduction</b></td></tr>
+            <tr id='total_payable'><td><b>Total Payable Amount</b></td></tr>
+        </table>
+    </div>
+
+<script>
+$(function () {
+    var serviceURL1 = "http://DESKTOP-DN971JE:8081/get_cart/0";  
+    var rows = "";
+    var total_price = 0;
+    $.get(serviceURL1, function (data) {
+        var cartList = data.cartItems; 
+
+        if (cartList == undefined) { // did not manage to call service
+            $('#cartTable').empty();
+            $('body').append("<label> There is a problem retrieving items, please try again later. </label>");
+        }
+
+        for (var i = 0; i < cartList.length; i++) {
+            total_price += cartList[i].productPrice*cartList[i].productQty;
+            eachRow =
+                "<td>" + cartList[i].productID + "</td>" +    
+                "<td>" + cartList[i].productName + "</td>" +
+                "<td>" + cartList[i].productPrice + "</td>" +
+                "<td>" + cartList[i].productQty + "</td>" + 
+                "<td>" + cartList[i].productPrice*cartList[i].productQty + "</td>";
+            rows += "<tr>" + eachRow + "</tr>";
+        }
+
+        $('#cartTable').append(rows);
+        $("#totalTable #total_price").append(total_price);
+
+    var serviceURL2 = "http://DESKTOP-DN971JE:8082/customer/12345678903";  
+    $.get(serviceURL2, function (data) {
+        $("#totalTable #loyalty_disc").append(data.points);   
+        var total_payable = total_price - data.points;
+        var points = data.points;
+        $('#totalTable #total_payable').append(total_payable) 
+
+        //update points
+        $(document).ready(function(){
+            $.ajaxSetup({
+                headers:{
+                    'Content-Type': "application/json"
+                }
+            });
+            console.log(total_price);
+            console.log(points);
+            $.ajax({
+                type: 'PUT', // Use POST with X-HTTP-Method-Override or a straight PUT if appropriate.
+                dataType: 'json', // Set datatype - affects Accept header
+                url: "http://DESKTOP-DN971JE:8081/update_cart", // A valid URL
+                //headers: {"X-HTTP-Method-Override": "PUT"}, // X-HTTP-Method-Override set to PUT.
+                data: JSON.stringify({
+                        "ID": 0,
+                        "total": total_price, 
+                        "currency": "SGD",
+                        "points": points,
+                        "cartItems": [{
+                            "ID": 0,
+                            "productID": 0,
+                            "productName": "string",
+                            "productPrice": 0,
+                            "productQty": 0
+                        }]
+                    })
+            });
+
+        });
+
+
+    })
+
+    }) // $.get
+    .fail(function () {
+        $('#cartTable').empty();
+        $('body').append("<label> There is a problem retrieving items, please try again later. </label>");
+    })     
+
+    
+
+});
+      
+</script>
+
+
+<button id="payment">Proceed to Payment</button>
+
+<script>
+    $(document).ready(function(){
+        $("button").click(function(){
+            $.ajaxSetup({
+                headers:{
+                    'Content-Type': "application/json"
+                }
+            });
+
+        $.post("http://DESKTOP-DN971JE:8093/paypal_create",
+            JSON.stringify(
+                {
+                "order_id": "0"
+                }
+            ),
+            function Redirect(data) {
+                window.location.href = data.return_link[1].href;
+            }
+        );
+        });
+    });
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Bootstrap libraries -->
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
+        crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h1><center>Seyfora Dispatch Admin Panel</center></h1>
+    <div class="col-md-6">
+        <table id="ordersTable" class='table table-striped' border='1'>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer ID</th>
+                <th>Status</th>
+                <th>Carrier</th>
+                <th>Tracking_ID</th>
+                <th>Send for Shipping</th>
+                <!-- <th>Submit Shipment</th> -->
+            </tr>
+        </table>
+    </div>
+
+<script>
+
+$(function () {
+    var serviceURL = "http://DESKTOP-DN971JE:8087/get_all";
+	var serviceURLforPut = "http://DESKTOP-DN971JE:8087/shipOrder";
+    var rows = "";
+	var ordersList;
+    $.get(serviceURL, function (data) {
+        ordersList = data.Get_Order; 
+		console.log(ordersList);
+        if (ordersList == undefined) { // did not manage to call service
+            $('#ordersTable').empty();
+            $('body').append("<label> There is a problem retrieving items, please try again later. </label>");
+        }
+        for (var i = 0; i < ordersList.length; i++) {
+            "<form name='carrierform' id='carrierform' method='post' onsubmit='return false;'>"
+            eachRow =
+                "<td>" + ordersList[i].order_id + "</td>" +    
+                "<td>" + ordersList[i].customer_id + "</td>" +
+                "<td>" + ordersList[i].status + "</td>" +
+                "<td>" +
+					"<select name='" + i + "assigned_carrier'>"+
+						"<option value='' disabled selected>Select assigned carrier</option>"+
+						"<option value='BHL'>BHL</option>"+
+						"<option value='FedUp'>FedUp</option>"+
+						"<option value='Ninja Lorry'>Ninja Lorry</option>"+
+						"<option value='StinkaporePost'>StinkaporePost</option>"+
+					"</select>"+
+					"</td>" +
+                "<td>" + "<input name='" + i + "tracking_id' type='text' placeholder = 'Key in Tracking ID' >" + "</td>"+
+				"<td> <button id='" + i + "' class='sendbutton'>Send Order</button></td>";
+            rows += "<tr>" + eachRow + "</tr>";
+        }
+        $('#ordersTable').append(rows);
+    }) 
+	// $.get FAILURE
+    .fail(function () {
+        $('#ordersTable').empty();
+        $('body').append("<label> There is a problem retrieving items, please try again later. </label>");
+    })     
+    
+/*	$("#carrierform").submit(function(event){
+		//event.preventDefault();
+		var form = $('carrierform').serialize();
+		console.log(carrierform);
+		$('.forminput').append(carrierform);
+		}) */
+	
+	
+	$(document).ready(function() {
+		$(document).on('click','#ordersTable .sendbutton',function(){
+			var selected = this.id;
+			var the_carrier = $("[name="+selected+"assigned_carrier]").val();
+			var the_tracking_id = $("[name="+selected+"tracking_id]").val();
+			var the_order_id = ordersList[selected].order_id;
+			var the_status = "Shipped";
+			var the_last_updated = new Date();
+			var shipping_data = JSON.stringify(
+					{
+						"order_id": the_order_id,
+						"status": the_status,
+						"carrier": the_carrier,            
+						"tracking_id": the_tracking_id,
+						"last_updated": the_last_updated
+					}
+			)
+			console.log(shipping_data);
+			$.ajax({
+				url: serviceURLforPut,
+				type: 'PUT',
+				headers: {
+					'Access-Control-Allow-Origin': "*",
+					'Content-Type': "application/json;charset=UTF-8"
+				},
+				data: shipping_data,
+				success: function(response) {
+					console.log(response);
+					response = eval(response);
+					alert("Input submitted");
+					location.reload();
+					}
+				});
+		});
+	});
+});
+
+$.put = function(url, data, callback, type){
+	if ( $.isFunction(data) ){
+		type = type || callback,
+		callback = data,
+		data = {}
+	}
+	
+	return $.ajax({
+		url: url,
+		type: 'PUT',
+		success: callback,
+		data: data,
+		contentType: type
+		});
+}
+	
+function refresh() {
+	alert("Input submitted");
+	location.reload();
+}
+</script>
+
+
+</body>
+</html>

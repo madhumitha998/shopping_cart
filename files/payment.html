@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+
+<head>
+    <!-- Add meta tags for mobile and IE -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- Bootstrap libraries -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
+        crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+<script>
+    var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+};
+
+    var PayerID = getUrlParameter('PayerID');
+    console.log(PayerID);
+
+    $(document).ready(function(){
+            $.ajaxSetup({
+                headers:{
+                    'Content-Type': "application/json"
+                }
+            });
+
+        $.post("http://DESKTOP-DN971JE:8093/paypal_execute2",
+            JSON.stringify(
+                {
+                "payer_id": PayerID
+                }
+            ),
+            function(data,status){
+                console.log("Status: " + "Payment Executed!"+"\nData: " + data);
+            });
+        });
+
+        //delete cart_items
+        $(document).ready(function(){
+            $.ajaxSetup({
+                headers:{
+                    'Content-Type': "application/json"
+                }
+            });
+
+            $.ajax({
+                url: 'http://DESKTOP-DN971JE:8081/delete_cart_items',
+                type: 'DELETE',
+                success: function() {
+                // Do something with the result
+                console.log("cart_items deleted")
+                }
+            });
+        });
+        
+        //delete cart
+        $(document).ready(function(){
+            $.ajaxSetup({
+                headers:{
+                    'Content-Type': "application/json"
+                }
+            });
+
+            $.ajax({
+                url: 'http://DESKTOP-DN971JE:8081/delete_cart',
+                type: 'DELETE',
+                success: setTimeout(function() {
+                //To make sure this only executes AFTER delete_cart_items
+                console.log("cart deleted")
+                },5000)
+            });
+        });
+
+        function pageRedirect() {
+        window.location.replace("home_page.html");
+        }      
+        //To make sure this only executes AFTER everything above
+        setTimeout("pageRedirect()", 12000);
+
+</script>
+<p><strong>Note:</strong> Payment Success. You will be redirected to the homepage in a few moments...</p>
+</body>
+    
